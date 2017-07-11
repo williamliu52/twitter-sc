@@ -51,6 +51,6 @@ This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md
 
 ## Acknowledgments
 
-* Hat tip to anyone who's code was used
-* Inspiration
+* Spark streaming tutorial: https://www.toptal.com/apache/apache-spark-streaming-twitter
+* Making Scala projects: http://www.learn4master.com/learn-how-to/how-to-package-a-scala-project-to-a-jar-file-with-sbt
 * etc
