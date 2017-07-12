@@ -12,6 +12,12 @@ object TwitterSC {
         // Set checkpoint for RDD recovery
         ssc.checkpoint("checkpoint_TwitterSC")
 
+        // Connect to Twitter application running at 9009
         val lines = ssc.socketTextStream("localhost", 9009)
+        println(lines)
+
+        // Run application
+        ssc.start()
+        ssc.awaitTermination()
     }
 }
