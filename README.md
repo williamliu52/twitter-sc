@@ -2,6 +2,8 @@
 
 SportsCenter powered by Twitter. See the sports highlights and stories that people are excited about in real time.
 
+**NOTE:** This README and project is a work in progress so there may be some boilerplate stuff left over.
+
 
 ## Getting Started
 
@@ -35,15 +37,10 @@ End with an example of getting some data out of the system or using it for a lit
 
 ## Built With
 
-* [Dropwizard](http://www.dropwizard.io/1.0.2/docs/) - The web framework used
-* [Maven](https://maven.apache.org/) - Dependency Management
-* [ROME](https://rometools.github.io/rome/) - Used to generate RSS Feeds
+* Python
+* Apache Spark
+* Scala
 
-## Authors
-
-* **Billie Thompson** - *Initial work* - [PurpleBooth](https://github.com/PurpleBooth)
-
-See also the list of [contributors](https://github.com/your/project/contributors) who participated in this project.
 
 ## License
 
