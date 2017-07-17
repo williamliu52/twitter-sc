@@ -105,3 +105,6 @@ ENV/
 *.class
 
 # End of https://www.gitignore.io/api/scala,python
+
+### Apache Spark ###
+scala/checkpoint*
