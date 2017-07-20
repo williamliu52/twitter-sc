@@ -1,7 +1,7 @@
 import org.apache.spark
 import org.apache.spark._
 import org.apache,spark.streaming._
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql._
 import org.apache.spark.rdd._
 
 object TwitterSC {
@@ -39,6 +39,15 @@ object TwitterSC {
     }
 
     def processRDD(rdd: RDD[(String, Int)], time: Time) {
+        println("-------- " + time + " --------")
+        try {
+            val sqlContext = getSqlContext(rdd.context)
+        } catch {
+            case e : Throwable => println("processRDD exception: " + e)
+        }
+    }
 
+    def getSqlContext(sc: SparkContext): SQLContext {
+    // TODO: create a global variable or something that houses a bunch of SQLContext objects; probably pass it in as an argument    
     }
 }
