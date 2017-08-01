@@ -7,13 +7,16 @@ import org.apache.spark.sql.types._
 
 object TwitterSC {
     def main(args: Array[String]) {
-        // Create SparkSession for SQL
-        val sparkSesh = SparkSession.builder().getOrCreate()
         // Create StreamingContext with 2 threads and batch interval of 2 seconds
         val conf = new SparkConf().setMaster("local[2]").setAppName("TwitterSC")
         val sc = new SparkContext(conf)
         sc.setLogLevel("ERROR")
         val ssc = new StreamingContext(sc, Seconds(2))
+        // Create SparkSession for SQL
+        val sparkSesh = SparkSession
+        .builder()
+        .config("spark.master", "local")
+        .getOrCreate()
         // Set checkpoint for RDD recovery so that updateStateByKey() can be used
         ssc.checkpoint("checkpoint_TwitterSC")
 
@@ -44,7 +47,7 @@ object TwitterSC {
         println("-----------" + time + " -----------")
         try {
             // convert RDD to row RDD; need _1 because entries are tuples
-            val rowRDD = rdd.map(entry => Row(entry._1, entry._2))
+            val rowRDD = rdd.map(entry => Row(entry._1, entry._2.toString))
             // constructing schema to match structure of rows in rowRDD
             val schemaString = "hashtag count"
             val fields = schemaString.split(" ").map(field => StructField(field, StringType, nullable=true))
