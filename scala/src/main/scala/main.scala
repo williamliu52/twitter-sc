@@ -4,6 +4,7 @@ import org.apache.spark.streaming._
 import org.apache.spark.sql._
 import org.apache.spark.rdd._
 import org.apache.spark.sql.types._
+import dispatch._, Defaults._
 
 object TwitterSC {
     def main(args: Array[String]) {
@@ -49,7 +50,6 @@ object TwitterSC {
             // convert RDD to row RDD; need _1 because entries are tuples
             val rowRDD = rdd.map(entry => Row(entry._1, entry._2))
             // constructing schema to match structure of rows in rowRDD
-            val schemaString = "hashtag count"
             val fields = Array(StructField("hashtag", StringType, nullable=true),
                             StructField("count", IntegerType, nullable=true))
             val schema = StructType(fields)
@@ -57,13 +57,23 @@ object TwitterSC {
             val hashtagsDF = sparkSesh.createDataFrame(rowRDD, schema)
             // create temp view using dataFrame
             hashtagsDF.createOrReplaceTempView("hashtags")
-            // select top 10 hashtags
-            val results = sparkSesh.sql("SELECT hashtag, count FROM hashtags ORDER BY count DESC LIMIT 10")
-            results.show()
+            // select top 10 hashtags and counts,
+            // converting to Arrays of strings and numbers, respectively
+            val hashtags = sparkSesh.sql("SELECT hashtag FROM hashtags ORDER BY count DESC LIMIT 10").collect().map(_.getString(0))
+            val counts = sparkSesh.sql("SELECT count FROM hashtags ORDER BY count DESC LIMIT 10").collect().map(_.getInt(0))
             // send top hashtags to web application
-            // TODO: implement sendDataToApp function
+            sendDataToApp(hashtags, counts, 10)
         } catch {
             case e : Throwable => println("processRDD exception: " + e)
         }
+    }
+
+    def sendDataToApp(hashtags: Array[String], counts: Array[Int], rows: Int) {
+        val myRequest = url("http://localhost:5001/updateData")
+        def postWithParams = myRequest << List(
+            ("label" -> hashtags.mkString(",")),
+            ("data" -> counts.mkString(","))
+        )
+        val response = postWithParams
     }
 }
