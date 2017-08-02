@@ -47,10 +47,11 @@ object TwitterSC {
         println("-----------" + time + " -----------")
         try {
             // convert RDD to row RDD; need _1 because entries are tuples
-            val rowRDD = rdd.map(entry => Row(entry._1, entry._2.toString))
+            val rowRDD = rdd.map(entry => Row(entry._1, entry._2))
             // constructing schema to match structure of rows in rowRDD
             val schemaString = "hashtag count"
-            val fields = schemaString.split(" ").map(field => StructField(field, StringType, nullable=true))
+            val fields = Array(StructField("hashtag", StringType, nullable=true),
+                            StructField("count", IntegerType, nullable=true))
             val schema = StructType(fields)
             // create dataFrame using rowRDD and schema
             val hashtagsDF = sparkSesh.createDataFrame(rowRDD, schema)
