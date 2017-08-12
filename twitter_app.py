@@ -24,29 +24,56 @@ def get_tweets():
     print(response)
     return response
 
+def get_photo_url(tweet):
+    try:
+        photo_url = tweet['entities']['media'][0]['url']
+    except:
+        photo_url = "None"
+    print(photo_url)
+    return photo_url
+
+def get_video_url(tweet):
+    try:
+        video_url = tweet['extended_entities']['media'][0]['url']
+    except:
+        video_url = "None"
+    print(video_url)
+    return video_url
+
+
 def send_tweets_to_spark(response, tcp_connection):
     for line in response.iter_lines():
         try:
             full_tweet = json.loads(line)
+            retweeted = False
             if full_tweet.get('retweeted_status'):
-                tweet_text = full_tweet['retweeted_status']['text']
-                tweet_favs = full_tweet['retweeted_status']['favorite_count']
-                tweet_rts = full_tweet['retweeted_status']['retweet_count']
-                print("Retweet text:" + tweet_text)
+                retweeted = True
+                retweet = full_tweet['retweeted_status']
+                tweet_text = retweet['text']
+                tweet_favs = retweet['favorite_count']
+                tweet_rts = retweet['retweet_count']
+                video_url = get_video_url(retweet)
+                photo_url = get_photo_url(retweet)
             else:
                 tweet_text = full_tweet['text']
                 tweet_favs = full_tweet['favorite_count']
                 tweet_rts = full_tweet['retweet_count']
-                print("Tweet text:" + tweet_text)
+                video_url = get_video_url(full_tweet)
+                photo_url = get_photo_url(full_tweet)
+
+            print("Retweeted: " + str(retweeted))
+            print("Tweet text: " + tweet_text)
             print("Favorites: " + str(tweet_favs))
             print("Retweets: " + str(tweet_rts))
+            print("Photo URL: " + photo_url)
+            print("Video URL: " + video_url)
             print("--------------------------------------")
             tcp_connection.send(tweet_text + '\n')
         except:
             e = sys.exc_info()[0]
             print("Error: %s" % e)
             print("--------------------------------------")
-    
+
 # Connection constants
 TCP_IP = "localhost"
 TCP_PORT = 9009
