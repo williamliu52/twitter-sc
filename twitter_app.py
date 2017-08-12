@@ -14,28 +14,39 @@ my_auth = requests_oauthlib.OAuth1(CONSUMER_KEY, CONSUMER_SECRET, ACCESS_TOKEN, 
 def get_tweets():
     # Query params according for Twitter's streaming API
     # Reference: https://dev.twitter.com/streaming/reference/post/statuses/filter
-    sports_leagues = 'nba,mlb,nfl,nhl,mls'
+    sports_leagues = 'nba,mlb,nfl,nhl,mls,sctop10'
     url = 'https://stream.twitter.com/1.1/statuses/filter.json'
 
     query_data = [('language', 'en'),('track', sports_leagues)]
     query_url = url + '?' + '&'.join([str(t[0]) + '=' + str(t[1]) for t in query_data])
 
     response = requests.get(query_url, auth=my_auth, stream=True)
-    print(query_url, response)
+    print(response)
     return response
 
 def send_tweets_to_spark(response, tcp_connection):
     for line in response.iter_lines():
         try:
             full_tweet = json.loads(line)
-            tweet_text = full_tweet['text']
-            print("Tweet text:" + tweet_text)
+            if full_tweet.get('retweeted_status'):
+                tweet_text = full_tweet['retweeted_status']['text']
+                tweet_favs = full_tweet['retweeted_status']['favorite_count']
+                tweet_rts = full_tweet['retweeted_status']['retweet_count']
+                print("Retweet text:" + tweet_text)
+            else:
+                tweet_text = full_tweet['text']
+                tweet_favs = full_tweet['favorite_count']
+                tweet_rts = full_tweet['retweet_count']
+                print("Tweet text:" + tweet_text)
+            print("Favorites: " + str(tweet_favs))
+            print("Retweets: " + str(tweet_rts))
             print("--------------------------------------")
             tcp_connection.send(tweet_text + '\n')
         except:
             e = sys.exc_info()[0]
             print("Error: %s" % e)
-
+            print("--------------------------------------")
+    
 # Connection constants
 TCP_IP = "localhost"
 TCP_PORT = 9009
