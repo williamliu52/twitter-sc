@@ -21,54 +21,58 @@ object TwitterSC {
         // Set checkpoint for RDD recovery so that updateStateByKey() can be used
         ssc.checkpoint("checkpoint_TwitterSC")
 
-        // Connect to Twitter application running at 9009
+        // Connect to Twitter application running at port 9009
         val dataStream = ssc.socketTextStream("localhost", 9009)
-        dataStream.print()
+        // dataStream.print()
 
-        // Split tweet into words for filtering for hashtags
+        // Split tweet into words for filtering for video links
         val words = dataStream.flatMap(_.split(" "))
-        val hashtags = words.filter(word => word.contains('#')).map(x => (x, 1))
-        // Add count of each hashtag to last count
-        val tagTotals = hashtags.updateStateByKey[Int](updateTagCount _)
+        val videos = words.filter(word => word.contains("https")).map(x => (x, 1))
+        // Add count of each video to last count
+        val vidCount = videos.updateStateByKey[Int](updateCount _)
         // Process each RDD generated in each interval
-        // TODO: implement processRDD function
-        tagTotals.foreachRDD(processRDD(_, _, sparkSesh))
+        vidCount.foreachRDD(processRDD(_, _, sparkSesh))
 
         // Run application
         ssc.start()
         ssc.awaitTermination()
     }
 
-    def updateTagCount(newValues: Seq[Int], total: Option[Int]): Option[Int] = {
+    // Function to increment hashtag value in the RDD
+    def updateCount(newValues: Seq[Int], total: Option[Int]): Option[Int] = {
         val newCount = newValues.sum + total.getOrElse(0)
         Some(newCount)
     }
-    
+
     def processRDD(rdd: RDD[(String, Int)], time: Time, sparkSesh: SparkSession) {
         println("-----------" + time + " -----------")
         try {
             // convert RDD to row RDD; need _1 because entries are tuples
             val rowRDD = rdd.map(entry => Row(entry._1, entry._2))
             // constructing schema to match structure of rows in rowRDD
-            val fields = Array(StructField("hashtag", StringType, nullable=true),
+            val fields = Array(StructField("vidUrl", StringType, nullable=true),
                             StructField("count", IntegerType, nullable=true))
             val schema = StructType(fields)
             // create dataFrame using rowRDD and schema
-            val hashtagsDF = sparkSesh.createDataFrame(rowRDD, schema)
+            val vidUrlDF = sparkSesh.createDataFrame(rowRDD, schema)
             // create temp view using dataFrame
-            hashtagsDF.createOrReplaceTempView("hashtags")
-            // select top 10 hashtags and counts,
+            vidUrlDF.createOrReplaceTempView("videos")
+            // select top 10 videos and counts,
             // converting to Arrays of strings and numbers, respectively
-            val hashtags = sparkSesh.sql("SELECT hashtag FROM hashtags ORDER BY count DESC LIMIT 10").collect().map(_.getString(0))
-            val counts = sparkSesh.sql("SELECT count FROM hashtags ORDER BY count DESC LIMIT 10").collect().map(_.getInt(0))
-            // send top hashtags to web application
-            sendDataToApp(hashtags, counts, 10)
+            val topVideos = sparkSesh.sql("SELECT vidUrl FROM videos ORDER BY count DESC LIMIT 10").collect().map(_.getString(0))
+            val counts = sparkSesh.sql("SELECT count FROM videos ORDER BY count DESC LIMIT 10").collect().map(_.getInt(0))
+            // print video count
+            println(topVideos.mkString("\n"))
+            // send top videos to web application
+            sendDataToApp(topVideos, counts, 10)
         } catch {
             case e : Throwable => println("processRDD exception: " + e)
         }
     }
 
     def sendDataToApp(hashtags: Array[String], counts: Array[Int], rows: Int) {
+        // Create requests using Dispatch library
+        // Doc Link: https://dispatchhttp.org//Dispatch.html
         val myRequest = url("http://localhost:5001/updateData")
         // Dispatch syntax for data to send with POST request
         def postWithParams = myRequest << List(
