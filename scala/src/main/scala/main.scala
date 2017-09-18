@@ -15,9 +15,9 @@ object TwitterSC {
         val ssc = new StreamingContext(sc, Seconds(2))
         // Create SparkSession for SQL
         val sparkSesh = SparkSession
-        .builder()
-        .config("spark.master", "local")
-        .getOrCreate()
+            .builder()
+            .config("spark.master", "local")
+            .getOrCreate()
         // Set checkpoint for RDD recovery so that updateStateByKey() can be used
         ssc.checkpoint("checkpoint_TwitterSC")
 
@@ -43,7 +43,7 @@ object TwitterSC {
         val newCount = newValues.sum + total.getOrElse(0)
         Some(newCount)
     }
-
+    
     def processRDD(rdd: RDD[(String, Int)], time: Time, sparkSesh: SparkSession) {
         println("-----------" + time + " -----------")
         try {
@@ -70,6 +70,7 @@ object TwitterSC {
 
     def sendDataToApp(hashtags: Array[String], counts: Array[Int], rows: Int) {
         val myRequest = url("http://localhost:5001/updateData")
+        // Dispatch syntax for data to send with POST request
         def postWithParams = myRequest << List(
             ("label" -> hashtags.mkString(",")),
             ("data" -> counts.mkString(","))
