@@ -17,19 +17,19 @@ def get_tweets():
     sports_leagues = 'nba,mlb,nfl,nhl,mls,sctop10'
     url = 'https://stream.twitter.com/1.1/statuses/filter.json'
 
+    # Build url to send to API
     query_data = [('language', 'en'),('track', sports_leagues)]
     query_url = url + '?' + '&'.join([str(t[0]) + '=' + str(t[1]) for t in query_data])
 
     response = requests.get(query_url, auth=my_auth, stream=True)
-    print(response)
     return response
 
+# Helper functions that extract tweet information such as video and photo url
 def get_photo_url(tweet):
     try:
         photo_url = tweet['entities']['media'][0]['url']
     except:
         photo_url = "None"
-    print(photo_url)
     return photo_url
 
 def get_video_url(tweet):
@@ -37,10 +37,9 @@ def get_video_url(tweet):
         video_url = tweet['extended_entities']['media'][0]['url']
     except:
         video_url = "None"
-    print(video_url)
     return video_url
 
-
+# Sends information about tweet to the Spark application
 def send_tweets_to_spark(response, tcp_connection):
     for line in response.iter_lines():
         try:
@@ -68,13 +67,13 @@ def send_tweets_to_spark(response, tcp_connection):
             print("Photo URL: " + photo_url)
             print("Video URL: " + video_url)
             print("--------------------------------------")
-            tcp_connection.send(tweet_text + '\n')
+            tcp_connection.send(tweet_text + ' ' + video_url + '\n')
         except:
             e = sys.exc_info()[0]
             print("Error: %s" % e)
             print("--------------------------------------")
 
-# Connection constants
+# Connection constants for the socket
 TCP_IP = "localhost"
 TCP_PORT = 9009
 conn = None
@@ -84,8 +83,9 @@ clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 # Create server socket to serve Tweets for 1 connection
 serverSocket.bind((TCP_IP, TCP_PORT))
 serverSocket.listen(1)
-# Create client socket to connect and stream Tweets
-clientSocket.connect((TCP_IP, TCP_PORT))
+
+# Create mock client socket to connect and stream Tweets for testing
+# clientSocket.connect((TCP_IP, TCP_PORT))
 
 print("Waiting for TCP connection...")
 conn, addr = serverSocket.accept()
