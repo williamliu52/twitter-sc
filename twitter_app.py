@@ -59,14 +59,6 @@ def send_tweets_to_spark(response, tcp_connection):
                 tweet_rts = full_tweet['retweet_count']
                 video_url = get_video_url(full_tweet)
                 photo_url = get_photo_url(full_tweet)
-
-            print("Retweeted: " + str(retweeted))
-            print("Tweet text: " + tweet_text)
-            print("Favorites: " + str(tweet_favs))
-            print("Retweets: " + str(tweet_rts))
-            print("Photo URL: " + photo_url)
-            print("Video URL: " + video_url)
-            print("--------------------------------------")
             tcp_connection.send(tweet_text + ' ' + video_url + '\n')
         except:
             e = sys.exc_info()[0]
