@@ -17,8 +17,7 @@ app.use(bodyParser.json());
 
 app.post('/updateData', function (req, res) {
     console.log(req.body);
-    console.log("UpdateData called");
-    res.send(200);
+    res.sendStatus(200);
 });
 
 app.listen(PORT, function () {

@@ -1,3 +1,4 @@
+import io.circe.syntax._
 import org.apache.spark
 import org.apache.spark._
 import org.apache.spark.streaming._
@@ -62,8 +63,6 @@ object TwitterSC {
             // converting to Arrays of strings and numbers, respectively
             val topVideos = sparkSesh.sql("SELECT vidUrl FROM videos ORDER BY count DESC LIMIT 10").collect().map(_.getString(0))
             val counts = sparkSesh.sql("SELECT count FROM videos ORDER BY count DESC LIMIT 10").collect().map(_.getInt(0))
-            // print video count
-            // println(topVideos.mkString("\n"))
             // send top videos to web application
             sendDataToApp(topVideos, "videos")
         } catch {
@@ -72,9 +71,12 @@ object TwitterSC {
     }
 
     def sendDataToApp(items: Array[String], label: String) {
-        val requestBody = "{" + '"' + label + '"' + ":" + '"' + "[" + items.mkString(",") + "]" + '"';
-        // Create requests using Dispatch library
-        // Doc Link: https://dispatchhttp.org//Dispatch.html
+        // Encode array as JSON using circe
+        // Docs: https://circe.github.io/circe/codec.html
+        val json = items.asJson
+        val requestBody = "{" + '"' + label + '"' + ":" + json + "}";
+        // Create requests using the scalaj-http library
+        // Doc: https://github.com/scalaj/scalaj-http
         try {
             Http("http://localhost:5000/updateData").postData(requestBody)
             .header("Content-Type", "application/json")
