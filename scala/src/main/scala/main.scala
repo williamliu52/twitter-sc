@@ -4,7 +4,8 @@ import org.apache.spark.streaming._
 import org.apache.spark.sql._
 import org.apache.spark.rdd._
 import org.apache.spark.sql.types._
-import dispatch._, Defaults._
+import scalaj.http._
+import scala.concurrent.ExecutionContext.Implicits.global
 
 object TwitterSC {
     def main(args: Array[String]) {
@@ -62,23 +63,24 @@ object TwitterSC {
             val topVideos = sparkSesh.sql("SELECT vidUrl FROM videos ORDER BY count DESC LIMIT 10").collect().map(_.getString(0))
             val counts = sparkSesh.sql("SELECT count FROM videos ORDER BY count DESC LIMIT 10").collect().map(_.getInt(0))
             // print video count
-            println(topVideos.mkString("\n"))
+            // println(topVideos.mkString("\n"))
             // send top videos to web application
-            sendDataToApp(topVideos, counts, 10)
+            sendDataToApp(topVideos, "videos")
         } catch {
             case e : Throwable => println("processRDD exception: " + e)
         }
     }
 
-    def sendDataToApp(hashtags: Array[String], counts: Array[Int], rows: Int) {
+    def sendDataToApp(items: Array[String], label: String) {
+        val requestBody = "{" + '"' + label + '"' + ":" + '"' + "[" + items.mkString(",") + "]" + '"';
         // Create requests using Dispatch library
         // Doc Link: https://dispatchhttp.org//Dispatch.html
-        val myRequest = url("http://localhost:5001/updateData")
-        // Dispatch syntax for data to send with POST request
-        def postWithParams = myRequest << List(
-            ("label" -> hashtags.mkString(",")),
-            ("data" -> counts.mkString(","))
-        )
-        val response = postWithParams
+        try {
+            Http("http://localhost:5000/updateData").postData(requestBody)
+            .header("Content-Type", "application/json")
+            .header("Charset", "UTF-8").asString
+        } catch {
+            case e : Throwable => println("Request error: " + e)
+        }
     }
 }
