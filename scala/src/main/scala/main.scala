@@ -14,7 +14,7 @@ object TwitterSC {
         val conf = new SparkConf().setMaster("local[2]").setAppName("TwitterSC")
         val sc = new SparkContext(conf)
         sc.setLogLevel("ERROR")
-        val ssc = new StreamingContext(sc, Seconds(2))
+        val ssc = new StreamingContext(sc, Seconds(5))
         // Create SparkSession for SQL
         val sparkSesh = SparkSession
             .builder()
@@ -47,7 +47,6 @@ object TwitterSC {
     }
 
     def processRDD(rdd: RDD[(String, Int)], time: Time, sparkSesh: SparkSession) {
-        println("-----------" + time + " -----------")
         try {
             // convert RDD to row RDD; need _1 because entries are tuples
             val rowRDD = rdd.map(entry => Row(entry._1, entry._2))
